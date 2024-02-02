@@ -2,6 +2,8 @@ const jwt = require("jsonwebtoken")
 const User = require('../Model/userModel')
 const Owner = require('../Model/ownerModel')
 const Room = require('../Model/roomModel')
+const Booking = require('../Model/bookingModel')
+const Category = require('../Model/categoryModel')
 const dotenv = require("dotenv")
 dotenv.config()
 
@@ -104,6 +106,80 @@ const adminLogin =  async (req, res) => {
     }
   }
 
+  const bookingList = async (req, res) => {
+    try {
+      const bookings = await Booking.find()
+      res.status(200).json({ bookings });
+    } catch (error) {
+      console.log(error.message);
+      res.status(500).json({ status: "Internal Server Error" });
+    }
+  };
+
+  const dashboardData = async(req,res)=>{
+    try {
+      const userCount = await User.find().countDocuments()
+      const ownerCount = await Owner.find().countDocuments()
+      const roomCount = await Room.find().countDocuments()
+
+      const bookings = await Booking.aggregate([
+        {
+          $group: {
+            _id: {
+              year: { $year: '$date' },
+              month: { $month: '$date' },
+              day: { $dayOfMonth: '$date' },
+            },
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalBookings: { $sum: '$count' },
+            totalDays: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            averageBookingsPerDay: { $divide: ['$totalBookings', '$totalDays'] },
+          },
+        },
+      ]);
+  
+        const averageBookingsPerDay = bookings[0].averageBookingsPerDay;
+        res.status(200).json({averageBookingsPerDay,userCount, ownerCount, roomCount})
+      
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
+  const addCategory = async(req,res)=>{
+    try {
+      console.log("calling here")
+      const {category} = req.body
+      const exist = await Category.findOne({name:category})
+      if(exist){
+        res.status(403).json({ message: "Category Already Exist" });
+      }else{
+
+        const Cat = new Category({
+          name:category
+        })
+        Cat.save()
+        res.status(200).json({message:"Category Added"})
+      }
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
+
+
+
+
   module.exports = {
     adminLogin,
     usersList,
@@ -111,5 +187,8 @@ const adminLogin =  async (req, res) => {
     ownerList,
     ownerBlock,
     roomList,
-    roomBlock
+    roomBlock,
+    bookingList,
+    dashboardData,
+    addCategory
   }

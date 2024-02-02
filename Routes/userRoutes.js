@@ -16,6 +16,14 @@ userRoute.patch('/verifyPasswordUser', userController.setNewPassword)
 userRoute.put('/editProfile', userController.editProfile)
 userRoute.post('/bookRoom',userController.bookRoom)
 userRoute.post('/cancelBooking',userController.cancelBooking)
+userRoute.post('/getLocationData',userController.searchedLocation)
+userRoute.post('/postReview',userController.reviewAndRating)
+userRoute.post('/myRatings',userController.myRatingss)
+userRoute.post('/paymentCheckout', userController.paymentCheckout)
+userRoute.post('/getRatingsss', userController.getRatings)
+userRoute.post('/checkAvailable', userController.checkRoomAvailability)
+userRoute.post('/applyFilter', userController.filteredRoomss)
+userRoute.post('/walletPay', userController.payByWallett)
 
 
 module.exports = userRoute

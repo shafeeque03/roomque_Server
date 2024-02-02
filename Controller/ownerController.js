@@ -10,6 +10,7 @@ const { promises } = require("dns")
 const Room = require("../Model/roomModel")
 const { ObjectId } = require("mongodb")
 const Booking = require("../Model/bookingModel")
+const Category = require("../Model/categoryModel")
 dotenv.config()
 
 var otpId;
@@ -233,8 +234,10 @@ const addRoom = async (req, res) => {
       location,
       roomImage,
       roomType,
-      acType
+      acType,
+      model
     } = req.body;
+    console.log(location, "this is location")
 
 
     if (!Array.isArray(roomImage)) {
@@ -259,7 +262,8 @@ const addRoom = async (req, res) => {
       rent,
       roomType,
       roomImages,
-      acType
+      acType,
+      model
     });
 
     res.status(201).json({ message: "Room added successfully" });
@@ -448,11 +452,63 @@ const myBookingss = async(req,res)=>{
   }
 }
 
+const editProfileOwner = async(req,res)=>{
+  try {
+
+    const {email, name, number,ownerId} = req.body
+    console.log(ownerId,"okok")
+    await Owner.findByIdAndUpdate({_id:ownerId},{$set:{
+      name:name,
+      email:email,
+      number:number
+    }})
+    const owner = await Owner.findOne({_id:ownerId})
+    res.status(200).json({owner
+      ,message: "Updated"})
+  } catch (error) {
+    console.log(error.message)
+    res.status(500).json({ status: "Internal Server Error" });
+  }
+}
+
+const checkedIn = async(req,res)=>{
+  try {
+    const {bookId} = req.body
+    await Booking.findByIdAndUpdate({_id:bookId},{$set:{checkedIn:true, status:"Checked"}})
+    res.status(200).json({message:"checkedIn Updated"})
+  } catch (error) {
+    console.log(error.message)
+  }
+}
 
 
+const allCategories = async(req,res)=>{
+  try {
+    const categories = await Category.find()
+    res.status(200).json({categories})
+  } catch (error) {
+    console.log(error.message)
+  }
+}
+
+const dashboardDataa = async(req,res)=>{
+  try {
+    const {ownerId} = req.params
+    const myRoomCount = await Room.find({ownerId:ownerId}).countDocuments()
+    const mybookingsCount = await Booking.find({ownerId:ownerId}).countDocuments()
+    const luxuryRooms = await Room.find({ ownerId: ownerId, model: "Luxury" }).countDocuments();
+    const normalRooms = await Room.find({ownerId:ownerId,model:"Normal"}).countDocuments()
+    const fourbooks = await Booking.find({ownerId:ownerId}).limit(4)
+    // console.log(fourbooks,"kitti");
+    res.status(200).json({myRoomCount, mybookingsCount, luxuryRooms, normalRooms, fourbooks})
+    // console.log(ownerId,myRoomCount,mybookingsCount,luxuryRooms,normalRooms, "this is owneriss")
+    
+  } catch (error) {
+    console.log(error.message)
+  }
+}
 
 
-  
 
   module.exports = {
     sendVerifymail,
@@ -469,5 +525,10 @@ const myBookingss = async(req,res)=>{
     roomBlock,
     forgotPassword,
     setNewPassword,
-    myBookingss
+    myBookingss,
+    editProfileOwner,
+    checkedIn,
+    allCategories,
+    dashboardDataa
+
   }

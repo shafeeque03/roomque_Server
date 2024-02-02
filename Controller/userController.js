@@ -1,4 +1,5 @@
 const User = require("../Model/userModel")
+const Owner = require("../Model/ownerModel")
 const Booking = require("../Model/bookingModel")
 const bcrypt = require("bcrypt")
 const nodemailer = require("nodemailer")
@@ -7,8 +8,13 @@ const dotenv = require("dotenv")
 const otpModel = require("../Model/otpModel")
 const jwt = require('jsonwebtoken')
 const Room = require("../Model/roomModel")
+const ChatModel = require("../Model/chatModel")
 const { userBlock } = require("./adminController")
+const Review = require("../Model/reviewModel")
+const stripe = require('stripe')
+const chatModel = require("../Model/chatModel")
 dotenv.config()
+
 
 var otpId;
 
@@ -166,7 +172,6 @@ const otpVerifying = async (req, res) => {
                 expiresIn: "1h",
               }
             );
-            req.session.user_id = user._id;
             res.status(200).json({ user, token, message: `Welome ${user.name}` });
           }else{
             return res.status(403).json({ message: "Incorrect password" });
@@ -215,7 +220,16 @@ const otpVerifying = async (req, res) => {
     try {
       const {roomId} = req.params
       const roomDetails = await Room.find({_id:roomId})
-      res.status(200).json({ roomDetails });
+      const reviews = await Review.find({roomId:roomId})
+      var averageRating
+      if (reviews.length > 0) {
+        const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+         averageRating = totalRating / reviews.length;
+      } else {
+         averageRating = "No review Available"
+      }
+
+      res.status(200).json({ roomDetails, reviews, averageRating });
     } catch (error) {
       console.log(error.message);
       res.status(500).json({ status: "Internal Server Error" });
@@ -277,17 +291,30 @@ const otpVerifying = async (req, res) => {
 
   const bookRoom = async (req,res)=>{
     try {
-      const date = new Date()
-      const now = new Date();
-      const exp = new Date(now.getTime() + 30 * 60000);
-      const {roomId,userId,ownerId} = req.body
+      const bdate = new Date()
+      const exp = new Date(bdate.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+      const {roomId,userId, date} = req.body
+      const userr = await User.findById({_id:userId})
+      // console.log(userr)
+      const available = await Booking.findOne({roomId:roomId, BookedFor:date})
+      if(available){
+        return res.status(403).json({ message: "Room not available for selected date" });
+      }else{
+
       const room = await Room.findOne({_id:roomId})
+      const ownerId = room.ownerId
+      const owner = await Owner.findById({_id:ownerId})
       const booking = new Booking({
-        date,
-        ownerId,
+        date:bdate,
+        ownerId:ownerId,
         roomId,
         userId,
+        userName:userr.name,
         cancelExp: exp,
+        balance:room.rent-500,
+        BookedFor:date,
+        ownerName:owner.name,
         room:
           {
             acType:room.acType,
@@ -299,7 +326,19 @@ const otpVerifying = async (req, res) => {
       })
       await booking.save()
       await Room.findByIdAndUpdate({_id:roomId},{$set:{is_available:false}})
+
+      const chatExist = await chatModel.findOne({
+        members:{ $all :[userId.toString(), ownerId.toString()]}
+      });
+      if(!chatExist){
+        const newChat = new ChatModel({
+          members: [userId.toString(), ownerId.toString()],
+        })
+        await newChat.save()
+      }
       res.status(200).json({ message: "Room Booked" });
+    }
+
     } catch (error) {
       console.log(error.message)
       res.status(500).json({ status: "Internal Server Error" });
@@ -310,7 +349,8 @@ const otpVerifying = async (req, res) => {
     try {
       const {userId} = req.params
       const booked = await Booking.find({userId:userId})
-      res.status(200).json({ booked });
+      const ratings = await Review.find({userId:userId})
+      res.status(200).json({ booked, ratings });
     } catch (error) {
       console.log(error.message)
       res.status(500).json({ status: "Internal Server Error" });
@@ -320,14 +360,240 @@ const otpVerifying = async (req, res) => {
   const cancelBooking = async(req,res)=>{
     try {
       const {bookId} = req.body
-      const rm = await Booking.findByIdAndUpdate({_id:bookId},{$set:{isCancelled:true}})
-      const roomId = rm.roomId
-      await Room.findByIdAndUpdate({_id:roomId},{$set:{is_available:true}})
-      res.status(200).json({ message: "Booking Cancelled" });
+      const today = new Date()
+      const booking = await Booking.findOne({_id:bookId})
+      if(today > booking.cancelExp){
+        const rm = await Booking.findByIdAndUpdate({_id:bookId},{$set:{isCancelled:true,status:"Cancelled"}})
+        const roomId = rm.roomId
+        await Room.findByIdAndUpdate({_id:roomId},{$set:{is_available:true}})
+      }else{
+        const rm = await Booking.findByIdAndUpdate({_id:bookId},{$set:{isCancelled:true,status:"Cancelled"}})
+        const roomId = rm.roomId
+        await Room.findByIdAndUpdate({_id:roomId},{$set:{is_available:true}})
+        await User.findOneAndUpdate(
+          { _id: rm.userId },
+          { $inc: { wallet: 500 } }
+        );
+        
+      }
+      const userData = await User.findOne({_id:booking.userId})
+      res.status(200).json({ userData,message: "Booking Cancelled" });
     } catch (error) {
       console.log(error.message)
     }
   }
+
+  const searchedLocation = async(req,res)=>{
+    try {
+      const {value} = req.body
+      const fRooms = await Room.find({ location: { $regex: new RegExp(value, 'i') } });
+      if(fRooms){
+        res.status(200).json({fRooms})
+      }
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
+  const changeWishlist = async(req,res)=>{
+    try {
+      const {status} = req.body
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
+  const reviewAndRating = async(req,res)=>{
+    try {
+      const {roomId,userName, userId, selectedRating, review} = req.body
+      const already = await Review.findOne({userId:userId, roomId:roomId})
+      if(already){
+        await Review.findOneAndUpdate({userId:userId, roomId:roomId},{$set:{
+          rating: selectedRating,
+          review:review,
+        }})
+      }else{
+        const rating = new Review({
+          rating: selectedRating,
+          review,
+          roomId,
+          userName,
+          userId
+        })
+        rating.save()
+      }
+      res.status(200).json({message:"Thanks for Rating"})
+      
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
+  const myRatingss = async(req,res)=>{
+    try {
+      const {userId} = req.body
+      const ratings = await Review.find({userId})
+      res.status(200).json({ratings})
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
+  const paymentCheckout = async(req,res)=>{
+    try {
+      const stripeIstance = stripe(process.env.STRIPE_SECRET_KEY)
+      const {roomDetails, date} = req.body
+      const lineItems = [
+        {
+          price_data:{
+            currency: "inr",
+            product_data:{
+              name:roomDetails.roomName
+            },
+            unit_amount: 500 * 100
+          },
+          quantity: 1,
+        }
+      ];
+
+      const session = await stripeIstance.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: lineItems,
+        mode: "payment",
+        success_url: success_url = `http://localhost:5173/paymentSuccess/${roomDetails._id}?date=${encodeURIComponent(date)}`,
+        cancel_url: `http://localhost:5173/roomDetails/${roomDetails._id}`,
+      });
+      res.json({id:session.id})
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
+  const getRatings = async(req,res)=>{
+    try {
+      const {roomId} = req.body
+      const allRatings = await Review.find({roomId:roomId})
+      res.status(200).json({allRatings})
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
+  const checkRoomAvailability = async(req,res)=>{
+    try {
+      const {roomId, date} = req.body
+      const available = await Booking.findOne({roomId:roomId, BookedFor:date})
+      if(available){
+        return res.status(403).json({ message: "Room not available for selected date" });
+      }else{
+        res.status(200).json({message:"available"})
+      }
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
+  const filteredRoomss = async (req, res) => {
+    try {
+      const { selectedFilters, rentFilter } = req.body;
+      const filterObject = {};
+  
+      if (selectedFilters.roomModels && selectedFilters.roomModels.length > 0) {
+        filterObject.model = { $in: selectedFilters.roomModels };
+      }
+  
+      if (selectedFilters.acTypes && selectedFilters.acTypes.length > 0) {
+        filterObject.acType = { $in: selectedFilters.acTypes };
+      }
+  
+      if (selectedFilters.categories && selectedFilters.categories.length > 0) {
+        filterObject.roomType = { $in: selectedFilters.categories };
+      }
+  
+      if (rentFilter.min && rentFilter.max) {
+        filterObject.rent = { $gte: parseInt(rentFilter.min), $lte: parseInt(rentFilter.max) };
+      } else if (rentFilter.min) {
+        filterObject.rent = { $gte: parseInt(rentFilter.min) };
+      } else if (rentFilter.max) {
+        filterObject.rent = { $lte: parseInt(rentFilter.max) };
+      }
+  
+      const filtered = await Room.find(filterObject);
+  
+      res.json({ filtered });
+    } catch (error) {
+      console.log(error.message);
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  const payByWallett = async (req,res)=>{
+    try {
+      const bdate = new Date()
+      const exp = new Date(bdate.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+      const {roomId,userId, date} = req.body
+      const userr = await User.findById({_id:userId})
+      // console.log(userr)
+      const available = await Booking.findOne({roomId:roomId, BookedFor:date})
+      if(available){
+        return res.status(403).json({ message: "Room not available for selected date" });
+      }else{
+
+      const room = await Room.findOne({_id:roomId})
+      const ownerId = room.ownerId
+      const owner = await Owner.findById({_id:ownerId})
+      const booking = new Booking({
+        date:bdate,
+        ownerId:ownerId,
+        roomId,
+        userId,
+        userName:userr.name,
+        cancelExp: exp,
+        balance:room.rent-500,
+        BookedFor:date,
+        ownerName:owner.name,
+        room:
+          {
+            acType:room.acType,
+            location: room.location,
+            roomName: room.roomName,
+            image: room.roomImages[0]
+          }
+        
+      })
+      await booking.save()
+      await Room.findByIdAndUpdate({_id:roomId},{$set:{is_available:false}})
+      await User.findOneAndUpdate(
+        { _id: userId },
+        { $inc: { wallet: -500 } }
+      );
+
+      const chatExist = await chatModel.findOne({
+        members:{ $all :[userId.toString(), ownerId.toString()]}
+      });
+      if(!chatExist){
+        const newChat = new ChatModel({
+          members: [userId.toString(), ownerId.toString()],
+        })
+        await newChat.save()
+      }
+      const user = await User.findOne({_id:userId})
+      res.status(200).json({ user,message: "Room Booked" });
+    }
+
+    } catch (error) {
+      console.log(error.message)
+      res.status(500).json({ status: "Internal Server Error" });
+    }
+  }
+
+
+
+  
+  
+
+  
 
   module.exports = {
     sendVerifymail,
@@ -342,7 +608,16 @@ const otpVerifying = async (req, res) => {
     editProfile,
     bookRoom,
     myBookings,
-    cancelBooking
+    cancelBooking,
+    searchedLocation,
+    reviewAndRating,
+    myRatingss,
+    paymentCheckout,
+    getRatings,
+    checkRoomAvailability,
+    filteredRoomss,
+    payByWallett
+
   }
 
   

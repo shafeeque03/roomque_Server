@@ -11,6 +11,14 @@ const bookingSchema = new mongoose.Schema({
     ref: "user",
     required: true,
   },
+  userName: {
+    type: String,
+    required: true,
+  },
+  ownerName:{
+    type: String,
+    required: true
+  },
   roomId: {
     type: mongoose.Types.ObjectId,
     ref: "room",
@@ -20,6 +28,10 @@ const bookingSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  BookedFor:{
+    type: Date,
+    required: true
+  },
   cancelExp:{
     type: Date,
     required: true,
@@ -27,6 +39,18 @@ const bookingSchema = new mongoose.Schema({
   isCancelled: {
     type: Boolean,
     default: false,
+  },
+  checkedIn:{
+    type: Boolean,
+    default: false
+  },
+  status:{
+    type: String,
+    default: "Booked"
+  },
+  balance:{ 
+    type: Number,
+    required: true
   },
   room: {
     roomName: {

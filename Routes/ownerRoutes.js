@@ -27,7 +27,10 @@ ownerRoute.patch('/deleteImage', ownerController.deleteRoomImage);
 ownerRoute.patch('/blockRoom', ownerController.roomBlock);
 ownerRoute.post('/forgotPassword', ownerController.forgotPassword)
 ownerRoute.patch('/verifyPassword', ownerController.setNewPassword)
-
+ownerRoute.put('/editProfile', ownerController.editProfileOwner)
+ownerRoute.post('/checkedIn', ownerController.checkedIn)
+ownerRoute.get('/getAllCats/:value', ownerController.allCategories)
+ownerRoute.get('/dashData/:ownerId', ownerController.dashboardDataa)
 
 
 module.exports = ownerRoute
