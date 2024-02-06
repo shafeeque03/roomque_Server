@@ -135,13 +135,6 @@ const addCategory = async (req, res) => {
   }
 };
 
-const lastFiveDaySales = async (req, res) => {
-  try {
-    return dailyBookingCounts;
-  } catch (error) {
-    console.log(error.message);
-  }
-};
 
 const dashboardData = async (req, res) => {
   try {
