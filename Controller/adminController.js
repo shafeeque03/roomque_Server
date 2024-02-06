@@ -118,7 +118,7 @@ const bookingList = async (req, res) => {
 
 const addCategory = async (req, res) => {
   try {
-    console.log("calling here");
+    console.log("calling heree");
     const { category } = req.body;
     const exist = await Category.findOne({ name: category });
     if (exist) {
