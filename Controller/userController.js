@@ -363,11 +363,11 @@ const otpVerifying = async (req, res) => {
       const today = new Date()
       const booking = await Booking.findOne({_id:bookId})
       if(today > booking.cancelExp){
-        const rm = await Booking.findByIdAndUpdate({_id:bookId},{$set:{isCancelled:true,status:"Cancelled"}})
+        const rm = await Booking.findByIdAndUpdate({_id:bookId},{$set:{isCancelled:true,status:"Cancelled", BookedFor:today}})
         const roomId = rm.roomId
         await Room.findByIdAndUpdate({_id:roomId},{$set:{is_available:true}})
       }else{
-        const rm = await Booking.findByIdAndUpdate({_id:bookId},{$set:{isCancelled:true,status:"Cancelled"}})
+        const rm = await Booking.findByIdAndUpdate({_id:bookId},{$set:{isCancelled:true,status:"Cancelled", BookedFor:today}})
         const roomId = rm.roomId
         await Room.findByIdAndUpdate({_id:roomId},{$set:{is_available:true}})
         await User.findOneAndUpdate(
