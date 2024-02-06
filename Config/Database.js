@@ -4,7 +4,7 @@ require("dotenv").config()
 module.exports = {
     dbconnect:()=>{
         mongoose
-    .connect(process.env.MONGO_URL, {
+    .connect("mongodb+srv://roomque:newBooking@roomquecluster.qwe342w.mongodb.net/roomque", {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     })
