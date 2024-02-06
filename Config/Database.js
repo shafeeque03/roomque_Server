@@ -3,12 +3,16 @@ require("dotenv").config()
 
 module.exports = {
     dbconnect:()=>{
-        mongoose.connect(process.env.MONGO_URL)
-        .then(()=>{
-            console.log("DB Connected");
-        })
-        .catch((err)=>{
-            console.log(err);
-        })
+        mongoose
+    .connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    })
+    .then(() => {
+      console.log("Database connected successfully");
+    })
+    .catch((err) => {
+      console.log("Error for connecting DB",err);
+    });
     }
 }
