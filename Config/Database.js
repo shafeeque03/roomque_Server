@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 require("dotenv").config()
 
-module.exports = {
-    dbconnect:()=>{
+// module.exports = {
+    const dbconnect = ()=>{
         mongoose
     .connect("mongodb+srv://roomque:newBooking@roomquecluster.qwe342w.mongodb.net/roomque", {
       useNewUrlParser: true,
@@ -15,4 +15,6 @@ module.exports = {
       console.log("Error for connecting DB",err);
     });
     }
-}
+// }
+// this.dbconnect()
+dbconnect()

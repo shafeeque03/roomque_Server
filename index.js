@@ -10,7 +10,7 @@ const http = require('http')
 const connectDB = require('./Config/Database')
 const socketConnection = require('./socketio')
 
-connectDB.dbconnect()
+// connectDB.dbconnect()
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors({
@@ -37,4 +37,4 @@ app.use('/message', messageRoutes)
 // app.listen(3001,()=>console.log('app is running on 3001'));
 const server = http.createServer(app)
 socketConnection(server)
-server.listen(3001,()=>{console.log('app is running on 3001')})
+server.listen(3001,()=>{console.log('app is running on 3001 works successfully')})
