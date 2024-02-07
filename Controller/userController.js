@@ -460,8 +460,8 @@ const otpVerifying = async (req, res) => {
         payment_method_types: ["card"],
         line_items: lineItems,
         mode: "payment",
-        success_url: success_url = `http://localhost:5173/paymentSuccess/${roomDetails._id}?date=${encodeURIComponent(date)}`,
-        cancel_url: `http://localhost:5173/roomDetails/${roomDetails._id}`,
+        success_url: success_url = `https://roomque-room.vercel.app/paymentSuccess/${roomDetails._id}?date=${encodeURIComponent(date)}`,
+        cancel_url: `https://roomque-room.vercel.app/roomDetails/${roomDetails._id}`,
       });
       res.json({id:session.id})
     } catch (error) {
