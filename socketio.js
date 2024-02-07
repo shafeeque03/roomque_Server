@@ -3,7 +3,8 @@ const {Server} = require('socket.io')
 function socketConnection(server) {
     const io = new Server(server, {
       cors: {
-        origin: 'https://roomque-room.vercel.app',
+        origin: "http://localhost:5173/",
+        // origin: "https://ride-vista-client.vercel.app",
         methods: ["GET", "POST"],
       },
     });
