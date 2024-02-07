@@ -37,4 +37,4 @@ app.use('/message', messageRoutes)
 // app.listen(3001,()=>console.log('app is running on 3001'));
 const server = http.createServer(app)
 socketConnection(server)
-server.listen(3001,()=>{console.log('app is running on 3001 works successfully')})
+server.listen(3001,()=>{console.log('app is running on PORT 3001')})
