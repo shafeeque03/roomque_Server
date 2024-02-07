@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
 require("dotenv").config()
 
-// module.exports = {
-    const dbconnect = ()=>{
+module.exports = {
+    dbconnect:()=>{
         mongoose
-    .connect("mongodb+srv://roomque:newBooking@roomquecluster.qwe342w.mongodb.net/roomque", {
+    .connect(process.env.MONGO_URL, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     })
@@ -12,9 +12,7 @@ require("dotenv").config()
       console.log("Database connected successfully");
     })
     .catch((err) => {
-      console.log("Error for connecting DB",err);
+      console.log("Error for connecting",err);
     });
     }
-// }
-// this.dbconnect()
-dbconnect()
+}
