@@ -167,7 +167,7 @@ const otpVerifying = async (req, res) => {
           if(correctPassword) {
             const token = jwt.sign(
               {name: user.name, email:user.email, id:user._id,role: "user"},
-              "mysecretkeyforjwt",
+              process.env.SECRET_KEY,
               {
                 expiresIn: "1h",
               }

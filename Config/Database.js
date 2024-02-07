@@ -4,7 +4,7 @@ require("dotenv").config();
 module.exports = {
   dbconnect: () => {
     mongoose
-      .connect("mongodb+srv://roomque:room100@cluster0.uyas23q.mongodb.net/roomque")
+      .connect(process.env.MONGO_URL)
       .then(() => {
         console.log("Database connected successfully");
       })
