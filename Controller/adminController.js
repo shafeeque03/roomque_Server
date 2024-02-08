@@ -140,12 +140,12 @@ const dashboardData = async (req, res) => {
   try {
     const today = new Date();
     const fiveDaysAgo = new Date(today);
-    fiveDaysAgo.setDate(today.getDate() - 5);
+    fiveDaysAgo.setDate(today.getDate() - 4);
 
     const saless = await Booking.aggregate([
       {
         $match: {
-          date: { $gte: fiveDaysAgo, $lt: today },
+          date: { $gte: fiveDaysAgo, $lte: today },
         },
       },
       {
@@ -163,6 +163,7 @@ const dashboardData = async (req, res) => {
       },
     ]);
     const dailyBookingCounts = saless.map((entry) => entry.count);
+    console.log(dailyBookingCounts,"kakaka")
     const userCount = await User.find().countDocuments();
     const ownerCount = await Owner.find().countDocuments();
     const roomCount = await Room.find().countDocuments();
@@ -193,7 +194,9 @@ const dashboardData = async (req, res) => {
       },
     ]);
 
-    const averageBookingsPerDay = bookings[0].averageBookingsPerDay;
+    const averageBookingsPerDay = bookings[0].averageBookingsPerDay.toFixed(1);
+    
+    
     res
       .status(200)
       .json({ averageBookingsPerDay, userCount, ownerCount, roomCount,dailyBookingCounts });
