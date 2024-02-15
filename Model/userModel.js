@@ -25,13 +25,12 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
       },
-      image: {
-        type: String,
-        default: "",
-      },
       wallet: {
         type: Number, 
         default: 0
+      },
+      profilePhoto: {
+        type: String
       }
 });
 

@@ -1,7 +1,6 @@
 const express = require('express')
 const userRoute = express();
 const userController = require('../Controller/userController')
-const verification = require("../middleware/authVerify")
 
 
 userRoute.post('/signup',userController.insertUser)
@@ -24,6 +23,7 @@ userRoute.post('/getRatingsss', userController.getRatings)
 userRoute.post('/checkAvailable', userController.checkRoomAvailability)
 userRoute.post('/applyFilter', userController.filteredRoomss)
 userRoute.post('/walletPay', userController.payByWallett)
+userRoute.post('/profileChange', userController.profileUpdation)
 
 
 module.exports = userRoute

@@ -13,6 +13,8 @@ const { userBlock } = require("./adminController")
 const Review = require("../Model/reviewModel")
 const stripe = require('stripe')
 const chatModel = require("../Model/chatModel")
+const cloudinary = require("../utils/cloudinary")
+
 dotenv.config()
 
 
@@ -79,7 +81,6 @@ const otpVerifying = async (req, res) => {
       const{otp,userId} = req.body
       console.log("hello otp and userId ",otp, userId)
       const otpData = await otpModel.findOne({userId:userId})
-      console.log(otpData,"this is otpDataaa")
       const { expiresAt } = otpData;
       const correctOtp = otpData.otp;
       if(otpData && expiresAt < Date.now()){
@@ -154,10 +155,8 @@ const otpVerifying = async (req, res) => {
   const verifyLogin = async (req, res) => {
     try {
       const email = req.body.email;
-      // console.log(email, "got the email")
       const password = req.body.password;
       const user = await User.findOne({ email: email });
-      // console.log(user, "this is user details")
       if(!user) {
         return res.status(401).json({message:"User not registered"})
       }
@@ -258,9 +257,9 @@ const otpVerifying = async (req, res) => {
 
   const setNewPassword = async(req,res)=>{
     try {
-  
       const password = req.body.password
       const userId = req.body.userId
+      console.log("Koo");
       const spassword = await securePassword(password)
       await User.findOneAndUpdate({_id:userId},{$set:{password:spassword}})
       res.status(200).json({ message: "Password updated" });
@@ -588,6 +587,41 @@ const otpVerifying = async (req, res) => {
     }
   }
 
+  const profileUpdation = async(req,res)=>{
+    try {
+      const {image, userId, lastImage} = req.body
+      // console.log(lastImage,"lImage");
+      try {
+        if (lastImage) {
+          const publicId = lastImage.match(/\/v\d+\/(.+?)\./)[1];
+          // console.log(publicId,"publicID");
+  
+          const deletionResult = await cloudinary.uploader.destroy(publicId, {
+            folder: "profileImage",
+          });
+        }
+  
+        const profileFile = await cloudinary.uploader.upload(image, {
+          folder: "profileImage",
+        });
+        const userData = await User.findByIdAndUpdate(
+          { _id: userId },
+          { $set: { profilePhoto: profileFile.secure_url } },
+          { new: true }
+        );
+        return res.status(200).json({ userData });
+      } catch (uploadError) {
+        console.error("Cloudinary upload error:", uploadError);
+        return res
+          .status(500)
+          .json({ message: "Error uploading image to Cloudinary" });
+      }
+      // console.log(userId,"userId from backend");
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
 
 
   
@@ -616,7 +650,8 @@ const otpVerifying = async (req, res) => {
     getRatings,
     checkRoomAvailability,
     filteredRoomss,
-    payByWallett
+    payByWallett,
+    profileUpdation
 
   }
 
