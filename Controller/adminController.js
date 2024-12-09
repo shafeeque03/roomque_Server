@@ -163,7 +163,6 @@ const dashboardData = async (req, res) => {
       },
     ]);
     const dailyBookingCounts = saless.map((entry) => entry.count);
-    console.log(dailyBookingCounts,"kakaka")
     const userCount = await User.find().countDocuments();
     const ownerCount = await Owner.find().countDocuments();
     const roomCount = await Room.find().countDocuments();

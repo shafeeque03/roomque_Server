@@ -108,7 +108,6 @@ const otpVerifying = async (req, res) => {
   const securePassword = async (password) => {
     try {
       const passwordHash = await bcrypt.hash(password, 10);
-      console.log(passwordHash,"ps hashhh");
       return passwordHash;
     } catch (error) {
       console.log(error.message);
@@ -137,7 +136,8 @@ const otpVerifying = async (req, res) => {
         const userData = await user.save();
         const newUserID = userData._id;
   
-        otpId = await sendVerifymail(userData.name, userData.email, userData._id)
+        otpId = await sendVerifymail(userData.name, userData.email, userData._id);
+        console.log(otpId,"this is otpId")
 
         res.status(201).json({
           status:`otp has send to ${email}`,
@@ -179,7 +179,13 @@ const otpVerifying = async (req, res) => {
           return res.status(403).json({ message: "User is blocked" });
         }
       }else{
-        return res.status(401).json({ message: "Email is not verified" });
+        otpId = await sendVerifymail(user.name, user.email, user._id)
+
+        res.status(201).json({
+          status:`otp has send to ${email}`,
+          userData: user,
+          otpId:otpId
+        })
       }
       
     } catch (error) {
@@ -459,8 +465,10 @@ const otpVerifying = async (req, res) => {
         payment_method_types: ["card"],
         line_items: lineItems,
         mode: "payment",
-        success_url: success_url = `https://roomque-room.vercel.app/paymentSuccess/${roomDetails._id}?date=${encodeURIComponent(date)}`,
-        cancel_url: `https://roomque-room.vercel.app/roomDetails/${roomDetails._id}`,
+        success_url: success_url = `https://http://localhost:5173/paymentSuccess/${roomDetails._id}?date=${encodeURIComponent(date)}`,
+        // success_url: success_url = `https://roomque-room.vercel.app/paymentSuccess/${roomDetails._id}?date=${encodeURIComponent(date)}`,
+        cancel_url: `https://http://localhost:5173/roomDetails/${roomDetails._id}`,
+        // cancel_url: `https://roomque-room.vercel.app/roomDetails/${roomDetails._id}`,
       });
       res.json({id:session.id})
     } catch (error) {
